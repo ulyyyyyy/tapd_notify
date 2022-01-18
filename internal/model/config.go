@@ -16,12 +16,16 @@ var (
 )
 
 type Config struct {
-	Id            int
-	Name          string
+	Id          int    // 配置Id
+	Name        string // 配置名称
+	Description string // 配置描述
+
+	//ReceiveType strList // 接收类型，指 task:create / task:update 等
 	ConditionType int            // 配置条件类型
 	Condition     JsonListParser // 配置条件
-	SummaryField  strList        // 推送内容
-	PushList      strList        // 推送人
+
+	SummaryField strList // 推送内容
+	PushList     strList // 推送人
 }
 
 func (cfg *Config) TableName() string {

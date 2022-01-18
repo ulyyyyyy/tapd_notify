@@ -1,4 +1,4 @@
-package wecom
+package wework
 
 import (
 	"fmt"
@@ -6,7 +6,7 @@ import (
 )
 
 var (
-	_keyWecomDomain = "api.wecom"
+	_keyWecomDomain = "api.wework"
 )
 
 // GetAccessToken 获取access_token

@@ -9,6 +9,14 @@ func NewSuccess(c *gin.Context, data interface{}) {
 	newResp(c, true, Success, mapper[Success], data)
 }
 
+func NewFailure(c *gin.Context, code AppCode, data interface{}) {
+	err, ok := data.(error)
+	if ok {
+		data = err.Error()
+	}
+	newResp(c, false, code, mapper[code], data)
+}
+
 // newResp 创建一个新的 Response 结构体
 func newResp(c *gin.Context, success bool, code AppCode, message string, data interface{}) {
 	c.JSON(http.StatusOK, AppResponse{

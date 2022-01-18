@@ -1,5 +1,5 @@
-// Package notify 维护企业微信消息推送相关类，接入开源项目 WeCom-Bot-API
-package notify
+// Package wework_notify 维护企业微信消息推送相关类，接入开源项目 WeCom-Bot-API
+package wework_notify
 
 import (
 	botApi "github.com/electricbubble/wecom-bot-api"
