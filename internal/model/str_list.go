@@ -5,9 +5,9 @@ import (
 	"strings"
 )
 
-type strList []string
+type StrList []string
 
-func (p strList) Value() (driver.Value, error) {
+func (p StrList) Value() (driver.Value, error) {
 	if p == nil || len(p) == 0 {
 		return []byte(""), nil
 	}
@@ -15,15 +15,15 @@ func (p strList) Value() (driver.Value, error) {
 	return []byte(join), nil
 }
 
-func (p *strList) Scan(value interface{}) error {
+func (p *StrList) Scan(value interface{}) error {
 	if string(value.([]byte)) == "" {
-		tmp := strList{}
+		tmp := StrList{}
 		*p = tmp
 		return nil
 	}
 	split := strings.Split(string(value.([]byte)), ",")
 	// 把p值塞进去
-	tmp := strList(split)
+	tmp := StrList(split)
 	*p = tmp
 	return nil
 }

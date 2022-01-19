@@ -19,11 +19,12 @@ var (
 
 // Receive 接收Webhook数据
 func Receive(c *gin.Context) {
-
+	// 解析Webhook数据
 	body, bsBody, err := getBody(c)
-	logger.Info("Receive webhook.\t issueId: %s" + body["id"][12:])
+	logger.Info("Receive webhook.\nissueId: %s" + body["id"][12:])
+	// 解析Request Body 中的数据
 	if err != nil {
-		logger.Error(err.Error())
+		logger.Error("[receive] json parse fail:" + err.Error())
 		return
 	}
 
@@ -34,35 +35,33 @@ func Receive(c *gin.Context) {
 		}()
 	}
 
-	go func() {
-		// 解析Request Body 中的数据
-		if err != nil {
-			logger.Error("[receive] json parse fail: " + err.Error())
-			return
-		}
-
-		// 拉取相关配置
-		configList, err := model.GetAllConfig()
-		if err != nil {
-			logger.Error("[config] get configList fail: " + err.Error())
-			return
-		}
-		for _, config := range configList {
-			// 检查是否符合条件
-			fmt.Println(config)
-
-		}
-
-		// 配置校验
-
-		// TODO: 推送相关逻辑
-
-	}()
+	go dataHandler()
 	// 采用异步协程返回数据
 	ginresp.NewSuccess(c, nil)
 }
 
-// getBody 获取req的body数据。由于前置中间件可能bind了一次，所以需要判断 c.Get(gin.BodyBytesKey)中是否已经存在缓存数据
+// dataHandler 推送消息处理逻辑
+func dataHandler() {
+	// 拉取相关配置
+	configList, err := model.GetAllConfig()
+	if err != nil {
+		logger.Error("[config] get configList fail: " + err.Error())
+		return
+	}
+	for _, config := range configList {
+		// 检查是否符合条件
+		fmt.Println(config)
+		condition := config.Condition
+		condition.Parse()
+	}
+
+	// 配置校验
+
+	// TODO: 推送相关逻辑
+
+}
+
+// getBody 获取req的body数据。由于前置中间件可能bind了一次，所以需要判断 c.Get(gin.BodyBytesKey) 的上下文中是否已经存在缓存数据
 // 如果存在则直接取出数据返回，如果不存在则重新Bind一次返回
 func getBody(c *gin.Context) (body map[string]string, bsBody []byte, err error) {
 	// 由之前的 c.ShouldBindBodyWith 可以看到，方法将读到的 []byte 塞入进了 gin.BodyBytesKey 中，后续使用则可以直接获取。

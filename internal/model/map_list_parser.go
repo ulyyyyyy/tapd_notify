@@ -35,3 +35,8 @@ func (args *JsonListParser) Scan(value interface{}) error {
 	err := json.Unmarshal(b, &args)
 	return err
 }
+
+func (args JsonListParser) Parse() (rlt bool) {
+
+	return false
+}

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/spf13/viper"
 	"github.com/ulyyyyyy/tapd_notify/internal/logger"
+	"github.com/ulyyyyyy/tapd_notify/internal/model/webhook_cfg"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"strings"
@@ -18,6 +19,11 @@ const (
 var db *gorm.DB
 
 func Initialize() (err error) {
+	err = AutoMigrate(&webhook_cfg.WebhookCfg{})
+	if err != nil {
+		return
+	}
+
 	dsn := strings.TrimSpace(viper.GetString(_cfgKeyDSN))
 	maxIdle := viper.GetInt(_cfgKeyMaxIdleConns)
 	maxOpen := viper.GetInt(_cfgKeyMaxOpenConns)
