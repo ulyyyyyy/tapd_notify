@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/ulyyyyyy/tapd_notify/internal/logger"
+	"github.com/ulyyyyyy/tapd_notify/internal/rate_limit"
 	"github.com/ulyyyyyy/tapd_notify/internal/router"
 	"log"
 	"net/http"
@@ -36,5 +37,6 @@ func initialize() {
 		os.Exit(1)
 	}
 
-	//
+	// 初始化
+	rate_limit.Initialize()
 }

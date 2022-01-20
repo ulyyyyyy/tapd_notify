@@ -3,6 +3,7 @@ package wework_notify
 
 import (
 	botApi "github.com/electricbubble/wecom-bot-api"
+	"log"
 )
 
 type notifyBot struct {
@@ -61,4 +62,11 @@ func initBot() (bot botApi.WeComBot) {
 // Push
 func Push(message string, receiverList []string) {
 	_ = botApi.NewWeComBot("test")
+}
+
+func PushSingle(message string, receiver string) {
+	bot = botApi.NewWeComBot(receiver)
+	if err := bot.PushMarkdownMessage(message); err != nil {
+		log.Fatalln(err)
+	}
 }

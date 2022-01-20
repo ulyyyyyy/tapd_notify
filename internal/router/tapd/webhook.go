@@ -2,13 +2,14 @@ package tapd
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/ulyyyyyy/tapd_notify/configs"
 	"github.com/ulyyyyyy/tapd_notify/internal/helper/ginresp"
+	"github.com/ulyyyyyy/tapd_notify/internal/helper/wework_notify"
 	"github.com/ulyyyyyy/tapd_notify/internal/logger"
 	"github.com/ulyyyyyy/tapd_notify/internal/model"
 	"github.com/ulyyyyyy/tapd_notify/internal/proxy"
+	"github.com/ulyyyyyy/tapd_notify/internal/rate_limit"
 	"io"
 	"sort"
 )
@@ -35,30 +36,39 @@ func Receive(c *gin.Context) {
 		}()
 	}
 
-	go dataHandler()
+	go dataHandler(body)
 	// 采用异步协程返回数据
 	ginresp.NewSuccess(c, nil)
 }
 
 // dataHandler 推送消息处理逻辑
-func dataHandler() {
+func dataHandler(body map[string]string) {
+	project := body["project"]
 	// 拉取相关配置
-	configList, err := model.GetAllConfig()
+	configList, err := model.FindByProjectId(project)
 	if err != nil {
 		logger.Error("[config] get configList fail: " + err.Error())
 		return
 	}
 	for _, config := range configList {
-		// 检查是否符合条件
-		fmt.Println(config)
-		condition := config.Condition
-		condition.Parse()
+		// 配置校验
+		condition := config.MatchCondition
+		// TODO 完善逻辑
+		if !condition.Parse() {
+			continue
+		}
+
+		var message string
+		pushList := config.PushList
+		for _, pusher := range pushList {
+			pushAddr := pusher.Value
+			rlt := rate_limit.Check(pushAddr)
+			// 如果放行，则推送
+			if rlt {
+				go wework_notify.PushSingle(message, pushAddr)
+			}
+		}
 	}
-
-	// 配置校验
-
-	// TODO: 推送相关逻辑
-
 }
 
 // getBody 获取req的body数据。由于前置中间件可能bind了一次，所以需要判断 c.Get(gin.BodyBytesKey) 的上下文中是否已经存在缓存数据
