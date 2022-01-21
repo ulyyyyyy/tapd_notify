@@ -2,6 +2,7 @@ package rate_limit
 
 import (
 	"fmt"
+	"github.com/ulyyyyyy/tapd_notify/internal/helper/wework_notify"
 	"github.com/ulyyyyyy/timeboundmap"
 	"time"
 )
@@ -12,9 +13,8 @@ const (
 )
 
 var (
-	unsentContentMap = make(map[string]int) // 未发送的消息
-	boundMap         *timeboundmap.TimeBoundMap
-	c                = make(chan string)
+	boundMap *timeboundmap.TimeBoundMap
+	c        = make(chan *count)
 )
 
 // Initialize 初始化boundMap
@@ -29,32 +29,33 @@ func Initialize() {
 	for {
 		select {
 		case pushAddr := <-c:
-			fmt.Println(pushAddr)
+			number := (*pushAddr).Number
+			receiver := (*pushAddr).Key
+			boundMap.Set(receiver, 1, 1*time.Minute, countKey)
+			wework_notify.PushMerge(receiver, number)
 		}
 	}
 }
 
-// Check 推送目标值检查是否可以推送，如果超过了频率则合并推送
-func Check(key string) (rlt bool) {
-	c := make(chan string)
+func countKey(key, value interface{}) {
+	c <- newCount(key, value)
+}
 
+// Check 推送目标值检查是否可以推送，如果超过了频率则合并推送，true为放行
+func Check(key string) (rlt bool) {
 	num := 1
 	if number, ok := boundMap.Get(key); ok {
 		num += number.(int)
 	}
-	boundMap.Set(key, num, 1*time.Second, func(key, value interface{}) {
-		fmt.Println(key, value)
-		c <- key.(string)
-		delete(unsentContentMap, key.(string))
-	})
-	rlt = num <= maxPostPerMinute
-	if !rlt {
-
-	}
-	return
+	boundMap.Set(key, num, 1*time.Minute, countKey)
+	return num <= maxPostPerMinute
 }
 
-// GetUnsentLen 检查合并推送数据的条数
-func GetUnsentLen(key string) (len int) {
-	return unsentContentMap[key]
+type count struct {
+	Key    string
+	Number int
+}
+
+func newCount(key interface{}, number interface{}) *count {
+	return &count{Key: key.(string), Number: number.(int)}
 }

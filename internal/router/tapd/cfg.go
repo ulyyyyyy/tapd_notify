@@ -4,7 +4,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/ulyyyyyy/tapd_notify/internal/helper/ginresp"
 	"github.com/ulyyyyyy/tapd_notify/internal/helper/mysql"
-	"github.com/ulyyyyyy/tapd_notify/internal/model/webhook_cfg"
+	"github.com/ulyyyyyy/tapd_notify/internal/model"
 	"strconv"
 	"strings"
 	"time"
@@ -31,12 +31,12 @@ func GetConfigByProject(c *gin.Context) {
 		ginresp.NewFailure(c, ginresp.ErrPageSize, err.Error())
 		return
 	}
-	total, err := webhook_cfg.CountByProjectId(projectId)
+	total, err := model.CountByProjectId(projectId)
 	if err != nil {
 		ginresp.NewFailure(c, ginresp.ErrProjectId, err.Error())
 		return
 	}
-	cfgList, err := webhook_cfg.FindByProjectId(projectId, pageNumber, pageSize)
+	cfgList, err := model.FindPageByProjectId(projectId, pageNumber, pageSize)
 	if err != nil {
 		ginresp.NewFailure(c, ginresp.ErrProjectId, err.Error())
 		return
@@ -55,7 +55,7 @@ func GetConfigById(c *gin.Context) {
 	project := c.Param("project")
 	id := c.Param("id")
 
-	cfg, err := webhook_cfg.FindByProjectAndId(project, id)
+	cfg, err := model.FindByProjectAndId(project, id)
 	if err != nil {
 		ginresp.NewFailure(c, ginresp.ErrWebhookCfgId, err.Error())
 		return
@@ -76,7 +76,7 @@ func CreateConfig(c *gin.Context) {
 	email := c.GetHeader("X-GateWay-Email")
 	_tx := mysql.DB().Begin()
 
-	var cfg webhook_cfg.WebhookCfg
+	var cfg model.WebhookCfg
 	err := c.BindJSON(&cfg)
 	if err != nil {
 		ginresp.NewFailure(c, ginresp.ErrRequestBodyParse, err.Error())
@@ -89,7 +89,7 @@ func CreateConfig(c *gin.Context) {
 
 	cfg.CreatedAt = time.Now()
 	cfg.Creator = email
-	err = webhook_cfg.Insert(&cfg, _tx)
+	err = model.Insert(&cfg, _tx)
 	if err != nil {
 		_tx.Rollback()
 		if strings.Contains(err.Error(), "Duplicate entry") {
@@ -113,13 +113,13 @@ func UpdateConfigById(c *gin.Context) {
 	project := c.Param("project")
 	email := c.GetHeader("X-GateWay-Email")
 
-	exits, err := webhook_cfg.ExitsByIdAndProject(id, project)
+	exits, err := model.ExitsByIdAndProject(id, project)
 	if !exits || err != nil {
 		ginresp.NewFailure(c, ginresp.ErrConfigNotExists, "配置不存在")
 	}
 
 	// 获取Body中配置
-	var cfg webhook_cfg.WebhookCfg
+	var cfg model.WebhookCfg
 	err = c.BindJSON(&cfg)
 	if err != nil {
 		ginresp.NewFailure(c, ginresp.ErrRequestBodyParse, "配置传入失败")
@@ -131,7 +131,7 @@ func UpdateConfigById(c *gin.Context) {
 	}
 
 	// 更新操作
-	err = webhook_cfg.UpdateById(&cfg, email)
+	err = model.UpdateById(&cfg, email)
 	if err != nil {
 		ginresp.NewFailure(c, ginresp.ErrCfgInsert, err.Error())
 		return
@@ -150,13 +150,13 @@ func UpdateStatusById(c *gin.Context) {
 	project := c.Param("project")
 	email := c.GetHeader("X-GateWay-Email")
 
-	cfg, err := webhook_cfg.FindByProjectAndId(project, id)
+	cfg, err := model.FindByProjectAndId(project, id)
 	if err != nil {
 		ginresp.NewFailure(c, ginresp.ErrConfigNotExists, "配置不存在")
 	}
 
 	cfg.Status = !cfg.Status
-	err = webhook_cfg.UpdateById(&cfg, email)
+	err = model.UpdateById(&cfg, email)
 	if err != nil {
 		ginresp.NewFailure(c, ginresp.ErrCfgUpdate, err.Error())
 		return
@@ -175,13 +175,13 @@ func DeleteConfigById(c *gin.Context) {
 	project := c.Param("project")
 
 	//
-	rlt, err := webhook_cfg.ExitsByIdAndProject(id, project)
+	rlt, err := model.ExitsByIdAndProject(id, project)
 	if !rlt {
 		ginresp.NewFailure(c, ginresp.ErrConfigNotExists, id)
 		return
 	}
 
-	err = webhook_cfg.DeleteById(id)
+	err = model.DeleteById(id)
 	if err != nil {
 		ginresp.NewFailure(c, ginresp.ErrCfgDelete, id)
 		return
@@ -191,10 +191,10 @@ func DeleteConfigById(c *gin.Context) {
 
 // configsResponse
 type configsResponse struct {
-	Total   int64                    `json:"total"`
-	Configs []webhook_cfg.WebhookCfg `json:"rows"`
+	Total   int64              `json:"total"`
+	Configs []model.WebhookCfg `json:"rows"`
 }
 
-func newConfigsResponse(total int64, configs []webhook_cfg.WebhookCfg) *configsResponse {
+func newConfigsResponse(total int64, configs []model.WebhookCfg) *configsResponse {
 	return &configsResponse{Total: total, Configs: configs}
 }

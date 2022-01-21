@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/spf13/viper"
 	"github.com/ulyyyyyy/tapd_notify/internal/logger"
-	"github.com/ulyyyyyy/tapd_notify/internal/model/webhook_cfg"
+	"github.com/ulyyyyyy/tapd_notify/internal/model"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"strings"
@@ -19,7 +19,7 @@ const (
 var db *gorm.DB
 
 func Initialize() (err error) {
-	err = AutoMigrate(&webhook_cfg.WebhookCfg{})
+	err = AutoMigrate(&model.WebhookCfg{})
 	if err != nil {
 		return
 	}

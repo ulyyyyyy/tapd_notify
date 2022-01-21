@@ -1,4 +1,4 @@
-package wework
+package wecom
 
 import (
 	"fmt"
