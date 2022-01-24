@@ -32,8 +32,8 @@ func countKey(key, value interface{}) {
 		return
 	}
 	receiver := key.(string)
-	wework_notify.PushMerge(receiver, num-maxPostPerMinute)
 	boundMap.Set(receiver, 1, 1*time.Minute, countKey)
+	go wework_notify.PushMerge(receiver, num-maxPostPerMinute)
 }
 
 // Check 推送目标值检查是否可以推送，如果超过了频率则合并推送，true为放行
