@@ -14,7 +14,6 @@ const (
 
 var (
 	boundMap *timeboundmap.TimeBoundMap
-	c        = make(chan *count)
 )
 
 // Initialize 初始化boundMap
@@ -25,20 +24,16 @@ func Initialize() {
 			fmt.Printf("本次共清理 %10d 个, 耗时: %-16s\t(剩余: %10d 个)\n", cleaning, elapsed, remaining)
 		}),
 	)
-
-	for {
-		select {
-		case pushAddr := <-c:
-			number := (*pushAddr).Number
-			receiver := (*pushAddr).Key
-			boundMap.Set(receiver, 1, 1*time.Minute, countKey)
-			wework_notify.PushMerge(receiver, number)
-		}
-	}
 }
 
 func countKey(key, value interface{}) {
-	c <- newCount(key, value)
+	num := value.(int)
+	if num <= maxPostPerMinute {
+		return
+	}
+	receiver := key.(string)
+	wework_notify.PushMerge(receiver, num-maxPostPerMinute)
+	boundMap.Set(receiver, 1, 1*time.Minute, countKey)
 }
 
 // Check 推送目标值检查是否可以推送，如果超过了频率则合并推送，true为放行
